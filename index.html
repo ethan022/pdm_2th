@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>파이썬 연습장</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f6f8fa;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #1a7f37;
+    --accent-hover: #166f30;
+    --err: #d1242f;
+    --gutter: #8c959f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8d96a0;
+      --accent: #2ea043;
+      --accent-hover: #3fb950;
+      --err: #ff7b72;
+      --gutter: #6e7681;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── 상단 바 ─────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 16px; font-weight: 700; }
+  header .sub { font-size: 12px; color: var(--muted); }
+  header .spacer { flex: 1; }
+  #status {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  #dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #d29922;
+  }
+  #dot.ready   { background: var(--accent); }
+  #dot.running { background: #58a6ff; }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button:hover { background: var(--panel); }
+  #runBtn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  #runBtn:hover { background: var(--accent-hover); }
+  #runBtn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── 편집기 ─────────────────────────────── */
+  .editor-wrap {
+    flex: 1.3;
+    display: flex;
+    min-height: 120px;
+    overflow: hidden;
+  }
+  #lines {
+    padding: 12px 8px 12px 0;
+    width: 44px;
+    text-align: right;
+    color: var(--gutter);
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    font: 14px/1.6 Consolas, "D2Coding", "Courier New", monospace;
+    overflow: hidden;
+    user-select: none;
+    white-space: pre;
+  }
+  #code {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    outline: none;
+    resize: none;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 Consolas, "D2Coding", "Courier New", monospace;
+    tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+  }
+
+  /* ── 출력 ───────────────────────────────── */
+  .out-head {
+    display: flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .out-head .spacer { flex: 1; }
+  .out-head button { font-size: 12px; padding: 3px 10px; }
+  #out {
+    flex: 1;
+    min-height: 100px;
+    padding: 12px 16px;
+    overflow: auto;
+    font: 14px/1.6 Consolas, "D2Coding", "Courier New", monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  #out .err { color: var(--err); }
+  #out .sys { color: var(--muted); }
+
+  footer {
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  @media (max-width: 600px) {
+    header h1 { font-size: 14px; }
+    header .sub { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🐍 파이썬 연습장</h1>
+  <span class="sub">설비 고장을 예측하는 AI 데이터 분석</span>
+  <span class="spacer"></span>
+  <span id="status"><span id="dot"></span><span id="statusText">파이썬 로딩 중... (처음 한 번만, 10초 정도)</span></span>
+  <button id="runBtn" disabled>▶ 실행</button>
+  <button id="clearCodeBtn">코드 지우기</button>
+</header>
+
+<div class="editor-wrap">
+  <pre id="lines">1</pre>
+  <textarea id="code" spellcheck="false" autocomplete="off"
+    placeholder="여기에 파이썬 코드를 자유롭게 써 보세요"></textarea>
+</div>
+
+<div class="out-head">
+  실행 결과
+  <span class="spacer"></span>
+  <button id="clearOutBtn">출력 지우기</button>
+</div>
+<pre id="out"><span class="sys">▶ 실행 을 누르거나 Ctrl + Enter 로 실행합니다</span></pre>
+
+<footer>
+  Ctrl+Enter 실행 &nbsp;·&nbsp; Tab 들여쓰기 &nbsp;·&nbsp; 코드는 이 브라우저에 자동 저장됩니다 &nbsp;·&nbsp; 무한 반복에 빠지면 탭을 새로고침하세요
+</footer>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script>
+const ta        = document.getElementById("code");
+const linesEl   = document.getElementById("lines");
+const outEl     = document.getElementById("out");
+const dot       = document.getElementById("dot");
+const statusTxt = document.getElementById("statusText");
+const runBtn    = document.getElementById("runBtn");
+
+const SAMPLE = '# 여기에 자유롭게 코드를 써 보세요\nprint("파이썬 연습장 준비 완료")\n';
+let pyodide = null;
+let running = false;
+
+/* ── 편집기 기본 동작 ── */
+function renderLines() {
+  const n = ta.value.split("\n").length;
+  linesEl.textContent = Array.from({ length: Math.max(n, 1) }, (_, i) => i + 1).join("\n");
+  linesEl.scrollTop = ta.scrollTop;
+}
+ta.addEventListener("input", () => {
+  renderLines();
+  localStorage.setItem("practice_code", ta.value);
+});
+ta.addEventListener("scroll", () => { linesEl.scrollTop = ta.scrollTop; });
+ta.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {                       // Tab → 스페이스 4칸
+    e.preventDefault();
+    const s = ta.selectionStart, t = ta.selectionEnd;
+    ta.value = ta.value.slice(0, s) + "    " + ta.value.slice(t);
+    ta.selectionStart = ta.selectionEnd = s + 4;
+    ta.dispatchEvent(new Event("input"));
+  }
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {   // Ctrl+Enter → 실행
+    e.preventDefault();
+    run();
+  }
+});
+
+/* ── 출력 ── */
+function append(text, cls) {
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = text;
+  outEl.appendChild(span);
+  outEl.scrollTop = outEl.scrollHeight;
+}
+function clearOut() { outEl.textContent = ""; }
+
+/* ── 파이썬 준비 ── */
+async function init() {
+  try {
+    pyodide = await loadPyodide();
+    pyodide.setStdout({ batched: (s) => append(s + "\n") });
+    pyodide.setStderr({ batched: (s) => append(s + "\n", "err") });
+    // input() 을 브라우저 입력창으로 연결 (입력 결과는 출력창에 그대로 표시)
+    pyodide.runPython(
+      "import builtins\n" +
+      "import js\n" +
+      "def _input(prompt=\"\"):\n" +
+      "    r = js.window.prompt(str(prompt))\n" +
+      "    if r is None:\n" +
+      "        r = \"\"\n" +
+      "    print(str(prompt) + r)\n" +
+      "    return r\n" +
+      "builtins.input = _input\n"
+    );
+    dot.className = "ready";
+    statusTxt.textContent = "준비 완료";
+    runBtn.disabled = false;
+  } catch (e) {
+    dot.className = "";
+    statusTxt.textContent = "로딩 실패 - 인터넷 연결을 확인하고 새로고침하세요";
+    append("파이썬 로딩에 실패했습니다.\n" + e, "err");
+  }
+}
+
+/* ── 실행 ── */
+function formatError(e) {
+  let m = (e && e.message) ? e.message : String(e);
+  const i = m.indexOf("Traceback");
+  if (i >= 0) m = m.slice(i);
+  return m.replace(/File "<exec>"/g, 'File "연습장"');
+}
+function run() {
+  if (!pyodide || running) return;
+  running = true;
+  runBtn.disabled = true;
+  dot.className = "running";
+  statusTxt.textContent = "실행 중...";
+  clearOut();
+
+  const ns = pyodide.globals.get("dict")();   // 매번 새 이름공간 = 파일을 새로 실행하는 것과 동일
+  try {
+    pyodide.runPython(ta.value, { globals: ns });
+  } catch (e) {
+    append(formatError(e), "err");
+  } finally {
+    ns.destroy();
+    if (outEl.textContent === "") append("(출력 없음)", "sys");
+    running = false;
+    runBtn.disabled = false;
+    dot.className = "ready";
+    statusTxt.textContent = "준비 완료";
+  }
+}
+
+/* ── 버튼 ── */
+runBtn.addEventListener("click", run);
+document.getElementById("clearOutBtn").addEventListener("click", clearOut);
+document.getElementById("clearCodeBtn").addEventListener("click", () => {
+  if (ta.value.trim() !== "" && !confirm("작성한 코드를 모두 지울까요?")) return;
+  ta.value = "";
+  ta.dispatchEvent(new Event("input"));
+  ta.focus();
+});
+
+/* ── 시작 ── */
+ta.value = localStorage.getItem("practice_code") ?? SAMPLE;
+renderLines();
+init();
+</script>
+</body>
+</html>
